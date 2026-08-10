@@ -64,7 +64,7 @@ PathlessMark は次のようにしています。
 
 ## インストール
 
-1. [Releases](https://github.com/) から `PathlessMark-x.y.z-setup.exe` を入手
+1. [Releases](https://github.com/nanana03/pathlessmark/releases) から `PathlessMark-x.y.z-setup.exe` を入手
 2. 実行（管理者権限が必要です）
 3. 最後に「エクスプローラーを再起動して今すぐ反映する」にチェックを入れて完了
 
