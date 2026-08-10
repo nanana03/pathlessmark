@@ -47,7 +47,8 @@ $setExe = "$out\PathlessMark-settings.exe"
 Remove-Item $setExe -ErrorAction SilentlyContinue
 $set = "cl /nologo /O2 /utf-8 /std:c++17 /W4 /DUNICODE /D_UNICODE " +
        "`"$root\src\settings.cpp`" /Fe:`"$setExe`" /Fo:`"$out\\`" " +
-       "/link /SUBSYSTEM:WINDOWS advapi32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib"
+       "/link /SUBSYSTEM:WINDOWS advapi32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib " +
+       "msimg32.lib"
 
 $cmd = "`"$dev`" -arch=x64 -no_logo && $rc && $cl && $diag && $set"
 

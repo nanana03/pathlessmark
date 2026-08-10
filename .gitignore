@@ -5,3 +5,5 @@ dist/
 *.exp
 *.lib
 _rebuild.log
+bin/_old_PathlessMark_*.dll
+assets/badges/_sheet.png

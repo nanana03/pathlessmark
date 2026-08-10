@@ -12,6 +12,8 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <shellapi.h>
+#include <cwchar>
+#include <vector>
 #include "badgeicon.h"
 
 #pragma comment(lib, "comdlg32.lib")
@@ -32,22 +34,47 @@ constexpr int kCols = 8, kSw = 34, kGap = 6, kSwX = 20, kSwY = 60;
 
 constexpr int ID_APPLY = 101, ID_CUSTOM = 102, ID_OUTLINE = 103, ID_RESTART = 104;
 
-// プレビュー用：与えられた色で円を1つ描く（アイコン生成と同じ比率）
-static void DrawDot(HDC dc, int cx, int cy, int size, COLORREF fill, bool outline) {
-    const int rOut = static_cast<int>(size * badge::kOuterR);
-    const int rIn = outline ? rOut - static_cast<int>(size * badge::kRing) : rOut;
-    if (outline) {
-        HBRUSH w = CreateSolidBrush(RGB(255, 255, 255));
-        HPEN np = static_cast<HPEN>(GetStockObject(NULL_PEN));
-        HGDIOBJ ob = SelectObject(dc, w), op = SelectObject(dc, np);
-        Ellipse(dc, cx - rOut, cy - rOut, cx + rOut, cy + rOut);
-        SelectObject(dc, ob); SelectObject(dc, op); DeleteObject(w);
+// プレビュー：**アイコン生成そのもの**（badge::RenderSquare）の出力を貼る。
+// ⚠️ ここで円を描き直さない。かつて GDI の Ellipse で似せて描いていたため、
+//    ・寸法の基準がずれる（バッジ寸法基準 vs アイコン寸法基準）
+//    ・図柄の t が反映されない
+//    という食い違いが起きた（2026-08-10）。同じ関数を通せば構造的にずれない。
+// ⚠️ 引数は「アイコン全体の左上と辺長」。オーバーレイはアイコンと同じ寸法で重ねられ、
+//    絵柄はその左下に描かれる（badgeicon.h 参照）。
+static void DrawDot(HDC dc, int iconX, int iconY, int size, COLORREF fill, bool outline) {
+    if (size <= 0) return;
+    std::vector<badge::BGRA> src = badge::RenderSquare(size, fill, outline);
+
+    BITMAPINFO bi = {};
+    bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
+    bi.bmiHeader.biWidth = size;
+    bi.bmiHeader.biHeight = -size;        // 上から下（RenderSquare は下から上なので反転して渡す）
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+
+    void* bits = nullptr;
+    HDC mem = CreateCompatibleDC(dc);
+    HBITMAP bmp = CreateDIBSection(dc, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
+    if (!bmp) { DeleteDC(mem); return; }
+    // AlphaBlend は**乗算済みアルファ**を要求する
+    auto* dst = static_cast<badge::BGRA*>(bits);
+    for (int y = 0; y < size; ++y) {
+        const badge::BGRA* row = &src[static_cast<size_t>(size - 1 - y) * size];
+        for (int x = 0; x < size; ++x) {
+            badge::BGRA p = row[x];
+            p.b = static_cast<unsigned char>(p.b * p.a / 255);
+            p.g = static_cast<unsigned char>(p.g * p.a / 255);
+            p.r = static_cast<unsigned char>(p.r * p.a / 255);
+            dst[static_cast<size_t>(y) * size + x] = p;
+        }
     }
-    HBRUSH b = CreateSolidBrush(fill);
-    HPEN np = static_cast<HPEN>(GetStockObject(NULL_PEN));
-    HGDIOBJ ob = SelectObject(dc, b), op = SelectObject(dc, np);
-    Ellipse(dc, cx - rIn, cy - rIn, cx + rIn, cy + rIn);
-    SelectObject(dc, ob); SelectObject(dc, op); DeleteObject(b);
+    HGDIOBJ old = SelectObject(mem, bmp);
+    BLENDFUNCTION bf = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
+    AlphaBlend(dc, iconX, iconY, size, size, mem, 0, 0, size, size, bf);
+    SelectObject(mem, old);
+    DeleteObject(bmp);
+    DeleteDC(mem);
 }
 
 static void PaintWindow(HWND hwnd) {
@@ -86,7 +113,9 @@ static void PaintWindow(HWND hwnd) {
 
     // プレビュー（実寸16px と 拡大）
     const int py = kSwY + 2 * (kSw + kGap) + 26;
-    TextOutW(dc, 20, py - 22, L"見え方（左が実寸16px）", 12);
+    // ⚠️ 文字数を直書きしない（文言を直すたびにズレる）
+    const wchar_t* kPrevLabel = L"見え方（左がアイコン32px・右が48px）";
+    TextOutW(dc, 20, py - 22, kPrevLabel, static_cast<int>(wcslen(kPrevLabel)));
 
     // 明るい背景と暗い背景の2通り
     for (int k = 0; k < 2; ++k) {
@@ -104,8 +133,8 @@ static void PaintWindow(HWND hwnd) {
             HBRUSH fb = CreateSolidBrush(RGB(245, 199, 92));
             FillRect(dc, &fr, fb);
             DeleteObject(fb);
-            const int bs = f == 0 ? 16 : 22;   // バッジの実寸
-            DrawDot(dc, fx + bs / 2, fr.bottom - bs / 2, bs, g_color, g_outline);
+            // アイコン全体の箱＝fx,fy から一辺 fs。バッジはその左下1/4に描かれる
+            DrawDot(dc, fx, fy, fs, g_color, g_outline);
         }
     }
 
@@ -201,6 +230,32 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 }
 
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int) {
+    // 画面を出さずに .ico を書くオプション（ビルドと作り直し用）。
+    //   /writeico <出力先>   既定色で書く（DLL に埋め込む予備アイコン src\badge.ico 用）
+    //   /writeico user       保存済みの色で %APPDATA%\PathlessMark\badge.ico を書き直す
+    // ⚠️ どちらも**設定ツールと同じコード**（badge::WriteIco）を通す。別実装で描き直すと、
+    //    寸法を変えたときに片方だけ取り残される（2026-08-10 に左下1/4へ作り替えた際に実際に
+    //    予備アイコンと %APPDATA% 側が古い形のまま残りかけた）。
+    {
+        int argc = 0;
+        LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+        if (argv) {
+            const bool write = (argc >= 3 && _wcsicmp(argv[1], L"/writeico") == 0);
+            bool ok = false;
+            if (write) {
+                if (_wcsicmp(argv[2], L"user") == 0) {
+                    wchar_t p[MAX_PATH];
+                    ok = badge::UserIcoPath(p, MAX_PATH, true) &&
+                         badge::WriteIco(p, badge::LoadColor(), badge::LoadOutline());
+                } else {
+                    ok = badge::WriteIco(argv[2], badge::kDefaultColor, true);
+                }
+            }
+            LocalFree(argv);
+            if (write) return ok ? 0 : 1;
+        }
+    }
+
     g_color = badge::LoadColor();
     g_outline = badge::LoadOutline();
 
