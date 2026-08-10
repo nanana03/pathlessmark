@@ -21,6 +21,7 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
+#include "badgeicon.h"   // ユーザーが選んだ色のアイコンの場所を知るため
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -110,8 +111,22 @@ public:
         return c;
     }
 
-    // バッジの絵＝自DLL埋め込みの ICON リソース1番
+    // バッジの絵。
+    // ユーザーが設定ツールで色を選んでいれば %APPDATA%\PathlessMark\badge.ico を使い、
+    // 無ければ自DLL埋め込みの ICON リソース1番へ落とす。
+    // ⚠️ エクスプローラーはここで返したアイコンを**起動時に一度読むだけ**。
+    //    色を変えたらエクスプローラーの再起動が要る（設定ツールがそう案内している）。
     IFACEMETHODIMP GetOverlayInfo(PWSTR pwszIconFile, int cchMax, int* pIndex, DWORD* pdwFlags) {
+        wchar_t user[MAX_PATH];
+        if (badge::UserIcoPath(user, MAX_PATH, false) &&
+            GetFileAttributesW(user) != INVALID_FILE_ATTRIBUTES) {
+            if (wcslen(user) < static_cast<size_t>(cchMax)) {
+                wcscpy_s(pwszIconFile, cchMax, user);
+                *pIndex = 0;
+                *pdwFlags = ISIOI_ICONFILE | ISIOI_ICONINDEX;
+                return S_OK;
+            }
+        }
         if (!GetModuleFileNameW(g_hModule, pwszIconFile, cchMax)) return E_FAIL;
         *pIndex = 0;
         *pdwFlags = ISIOI_ICONFILE | ISIOI_ICONINDEX;
