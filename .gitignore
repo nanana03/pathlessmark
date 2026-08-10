@@ -7,3 +7,6 @@ dist/
 _rebuild.log
 bin/_old_PathlessMark_*.dll
 assets/badges/_sheet.png
+
+# この PC 専用の破壊的スクリプト（OneDrive を消す）。公開リポジトリに入れない
+admin-setup.ps1
