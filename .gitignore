@@ -1,0 +1,6 @@
+bin/
+dist/
+*.obj
+*.res
+*.exp
+*.lib
