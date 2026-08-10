@@ -4,3 +4,4 @@ dist/
 *.res
 *.exp
 *.lib
+_rebuild.log
