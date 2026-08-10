@@ -14,7 +14,23 @@ if (-not (Test-Path $dev)) { throw "VsDevCmd.bat が見つかりません: $dev"
 $root = $PSScriptRoot
 $out = "$root\bin"
 New-Item -ItemType Directory -Force $out | Out-Null
-Remove-Item "$out\PathlessMark.dll" -ErrorAction SilentlyContinue
+
+# ⚠️ 動いているプロセスが DLL を掴んでいると削除は失敗する。ここを黙って通すと、リンクだけ
+#    失敗して**古い DLL が残ったままビルド成功に見える**（2026-08-10 に実際に発生：
+#    dllmain.cpp 12:56 に対し DLL は 11:29 のまま）。
+# ⚠️ 掴むのは Explorer とは限らない。**ファイルダイアログを開いた任意のアプリ**にシェル拡張
+#    として読み込まれる（同日、ZipShrink が掴んでいた）。Explorer を落としても外れない。
+# → NTFS は**ロード済み DLL の削除は拒むが、リネーム（移動）は許す**。消せなければ退避する。
+$stale = "$out\PathlessMark.dll"
+Remove-Item $stale -ErrorAction SilentlyContinue
+if (Test-Path $stale) {
+    $bak = "$out\_old_PathlessMark_{0}.dll" -f (Get-Item $stale).LastWriteTime.ToString('HHmmss')
+    Rename-Item $stale $bak -ErrorAction Stop
+    Write-Host "使用中だったので退避しました -> $bak（再起動後に削除されます）"
+}
+# 退避した古い DLL は、掴んでいたプロセスが終われば消せる。消せるものだけ掃除する。
+Get-ChildItem "$out\_old_PathlessMark_*.dll" -ErrorAction SilentlyContinue |
+    ForEach-Object { Remove-Item $_.FullName -ErrorAction SilentlyContinue }
 
 $rc = "rc /nologo /fo `"$out\badge.res`" `"$root\src\badge.rc`""
 $cl = "cl /nologo /LD /O2 /utf-8 /std:c++17 /W4 /DUNICODE /D_UNICODE " +

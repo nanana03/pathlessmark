@@ -47,11 +47,13 @@ Name: "english";  MessagesFile: "compiler:Default.isl"
 Source: "..\bin\PathlessMark.dll"; DestDir: "{app}"; \
   Flags: ignoreversion regserver 64bit uninsrestartdelete
 Source: "..\bin\PathlessMark-diagnose.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\PathlessMark-settings.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist_readme\README.txt"; DestDir: "{app}"; Flags: ignoreversion isreadme
 Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; 15枠問題をユーザー自身が確認できる診断ツール（README で案内している導線）
+Name: "{group}\{#AppName} 設定（印の色）"; Filename: "{app}\PathlessMark-settings.exe"
 Name: "{group}\{#AppName} 診断"; Filename: "{app}\PathlessMark-diagnose.exe"
 Name: "{group}\{#AppName} のページ"; Filename: "{#AppURL}"
 Name: "{group}\{#AppName} をアンインストール"; Filename: "{uninstallexe}"
