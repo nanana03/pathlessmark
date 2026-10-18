@@ -90,8 +90,8 @@
  このソフトは無料です。役に立ったと感じていただけたら、開発の継続を
  支えていただけると嬉しいです。
 
- 受け口は準備中です。用意ができ次第、下記の配布ページに掲載します。
- https://github.com/nanana03/pathlessmark
+ 寄付は GitHub Sponsors で受け付けています（月額 $1 から）。
+ https://github.com/sponsors/peekrvr
 
 
 ■ 免責事項

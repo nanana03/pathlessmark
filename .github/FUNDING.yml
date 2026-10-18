@@ -1,8 +1,7 @@
 # 寄付の受け口（GitHub のリポジトリに Sponsor ボタンを出す）
-# ⚠️ アカウント開設が済むまでコメントアウトのままにする。
-#    存在しないアカウント名を書くとボタンが 404 になる。
-# ⚠️ 申請先は peekrvr（個人アカウント）。nanana03 は Organization で、
-#    組織は個人口座へ振り込めないため使えない（2026-08-10 に判明）。
-# github: peekrvr
+# 申請先は peekrvr（個人アカウント）。nanana03 は Organization で、
+# 組織は個人口座へ振り込めないため使えない（2026-08-10 に判明）。
+# 2026-10-16 承認・公開（https://github.com/sponsors/peekrvr）。
+github: peekrvr
 # ko_fi: xxxxx
 # custom: ["https://xxxxx.booth.pm/"]

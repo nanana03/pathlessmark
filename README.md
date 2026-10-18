@@ -103,4 +103,4 @@ powershell -ExecutionPolicy Bypass -File unregister.ps1
 ## 寄付について
 
 このソフトは無料です。気に入っていただけたら、開発の継続を支えてください。
-（受け口は準備中）
+GitHub Sponsors（月額 $1 から）→ https://github.com/sponsors/peekrvr
