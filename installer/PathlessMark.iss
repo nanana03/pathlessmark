@@ -12,7 +12,7 @@
 ; ビルド： "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\PathlessMark.iss
 
 #define AppName    "PathlessMark"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define Publisher  "Nanana"
 #define AppURL     "https://nanana03.github.io/pathlessmark/"
 
