@@ -1,7 +1,2 @@
-# 寄付の受け口（GitHub のリポジトリに Sponsor ボタンを出す）
-# 申請先は peekrvr（個人アカウント）。nanana03 は Organization で、
-# 組織は個人口座へ振り込めないため使えない（2026-08-10 に判明）。
-# 2026-10-16 承認・公開（https://github.com/sponsors/peekrvr）。
-github: peekrvr
-# ko_fi: xxxxx
-# custom: ["https://xxxxx.booth.pm/"]
+# 寄付の受け口（Sponsor ボタン）＝Ko-fi（Nanana Soft）。2026-10-22 ユーザー「PathlessMarkの寄付リンクもKo-fiに替えて」
+ko_fi: nananasoft
